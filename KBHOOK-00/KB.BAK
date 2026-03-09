@@ -1,0 +1,50 @@
+#include <stdio.h>
+#include <dos.h>
+#include <conio.h>
+
+volatile char keys[128];
+
+void interrupt (*old09)(void);
+
+void interrupt new09(void) {
+    unsigned char scancode;
+
+    scancode = inportb(0x60);
+
+    if (scancode & 0x80) {
+				keys[scancode & 0x7F] = 0;
+    } else {
+				keys[scancode] = 1;
+    }
+
+    outportb(0x20, 0x20);
+
+/*
+		(*old09)();
+*/
+
+}
+
+int main(void) {
+
+		int i;
+
+    old09 = getvect(0x09);
+		setvect(0x09, new09);
+
+		for(i=0;i<128;i++) keys[i]=0;
+
+		while (!keys[1]) {
+			for(i=0;i<128;i++) {
+				if(keys[i]) printf("%02X ",i);
+			}
+			printf("\n");
+		}
+
+    setvect(0x09, old09);
+
+		fflush(stdin);
+
+		return 0;
+}
+
